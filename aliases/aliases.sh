@@ -22,7 +22,7 @@ alias rl=". ~/.zprofile"
 # macOS ls doesn't support --color=always natively;
 # fallback to macOS-style coloring (-G).
 if ls --color=always / >/dev/null 2>&1; then
-  alias ls="ls -lah --color=always"
+  alias l="ls -lah --color=always"
 else
-  alias ls="ls -lahG"
+  alias l="ls -lahG"
 fi
