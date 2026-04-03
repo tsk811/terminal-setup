@@ -1,8 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ============================================================================
 # Terminal Aliases
 # ============================================================================
 # Sourced automatically by setup.sh
+# Compatible with sh, bash, and zsh.
 # Add, remove or modify aliases here freely.
 # ============================================================================
 
@@ -15,11 +16,11 @@ alias b="cd .."
 
 # -- Utilities ----------------------------------------------------------------
 alias x="clear"
-alias rl="source ~/.zprofile"
+alias rl=". ~/.zprofile"
 
 # -- ls override (with color) ------------------------------------------------
-# macOS ls doesn't support --color=always natively; use gls if available,
-# otherwise fallback to macOS-style coloring.
+# macOS ls doesn't support --color=always natively;
+# fallback to macOS-style coloring (-G).
 if ls --color=always / >/dev/null 2>&1; then
   alias ls="ls -lah --color=always"
 else
