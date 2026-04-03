@@ -1,0 +1,17 @@
+# Downloaded tool binaries (created by install-tools.sh)
+/bin/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
