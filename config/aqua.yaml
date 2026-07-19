@@ -1,0 +1,19 @@
+---
+# All binaries are installed below $AQUA_ROOT_DIR, which terminal-setup sets to
+# ~/.terminal-setup/tools. The registry is pinned for reproducibility.
+checksum:
+  enabled: true
+  require_checksum: false
+
+registries:
+  - type: standard
+    ref: v4.155.1
+
+packages:
+  - name: junegunn/fzf@v0.74.1
+  - name: sharkdp/bat@v0.26.1
+  - name: bootandy/dust@v1.2.4
+  - name: BurntSushi/ripgrep@15.2.0
+  - name: sharkdp/fd@v10.3.0
+  - name: jqlang/jq@jq-1.8.1
+  - name: mikefarah/yq@v4.53.2

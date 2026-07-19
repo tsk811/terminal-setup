@@ -1,122 +1,159 @@
-# 🚀 Terminal Setup
+# Terminal Setup
 
-> ⚠️ **Work in Progress** — This repository is actively being developed. Features and structure may change.
+A rootless, self-contained shell environment for macOS and Linux. Everything is
+kept under one directory in the user's home folder:
 
-A portable, modular terminal setup for **macOS** and **Linux**. Quickly configure shell aliases, zsh plugins, and CLI tools from a single repository — no root or git required.
-
-## Quick Start
-
-```bash
-# One-liner — curl and run (no git needed):
-bash <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
-```
-
-This will:
-1. Download the entire repo into `./terminal-setup` (current directory)
-2. Present an interactive menu to **source aliases/plugins** or **install CLI tools**
-3. Everything stays self-contained inside that folder
-
-## Architecture
-
-```
-terminal-setup/
-├── bootstrap.sh                # One-liner entry point (curl this)
-├── setup.sh                    # Sources aliases & plugins into current shell
-├── install-tools.sh            # Interactive CLI tool installer
-├── aliases/
-│   └── aliases.sh              # Shell aliases
+```text
+~/.terminal-setup/
+├── bootstrap.sh
+├── install-tools.sh
+├── shell/
+│   ├── init.sh
+│   ├── aliases.sh
+│   └── fzf.sh
 ├── config/
-│   ├── bat.conf                # bat configuration
-│   └── fzf.sh                  # fzf/bat integration config
+│   ├── aqua.yaml
+│   ├── bat.conf
+│   └── tmux.conf
 ├── plugins/
-│   ├── git.plugin.zsh          # Oh My Zsh git plugin
-│   ├── aws.plugin.zsh          # Oh My Zsh AWS plugin
-│   ├── terraform.plugin.zsh    # Oh My Zsh terraform plugin
-│   ├── tmux/                   # Oh My Zsh tmux plugin
-│   │   ├── tmux.plugin.zsh
-│   │   ├── tmux.extra.conf
-│   │   └── tmux.only.conf
-│   └── zsh-autosuggestions/
-│       └── zsh-autosuggestions.zsh
-└── bin/                        # ← Created at runtime (gitignored)
-    ├── fzf                     #   Downloaded tool binaries live here
-    ├── bat
-    ├── dust
-    ├── rg
-    └── fd
+├── local/                 # private, machine-specific overrides
+└── tools/                 # Aqua and all managed executables
 ```
 
-## How It Works
+The setup never uses `sudo`, a system package manager, `/usr/local`, `/opt`,
+`~/.config`, or `~/.local`. A writable home directory and `curl` are the only
+initial requirements.
 
-### bootstrap.sh (entry point)
-- Downloads the repo as a **tarball via curl** — no git required
-- Extracts to `./terminal-setup` in the current directory
-- Presents a menu: source plugins, install tools, or view shell integration instructions
-- On re-run, updates the repo while **preserving installed tools** in `bin/`
+## Install or update
 
-### setup.sh (source this)
-- Loads all aliases and zsh plugins into the current shell
-- Adds `<repo>/bin` to `$PATH` so installed tools are available
-- Loads fzf/bat configuration
+Source the bootstrap from Bash or Zsh:
 
-### install-tools.sh (run this)
-- Interactive menu to select which tools to install
-- Downloads prebuilt binaries from GitHub Releases
-- Installs into `<repo>/bin/` — **no root**, everything stays in one place
-
-## Design Principles
-
-| Principle | Detail |
-|---|---|
-| **Self-contained** | Everything (scripts, plugins, tools) lives in one folder |
-| **No root** | All tools install to `<repo>/bin/` — no `sudo` needed |
-| **No git required** | Bootstrap uses `curl` to download a tarball |
-| **Modular** | Aliases, plugins, and tools are independent; add or remove freely |
-| **Interactive tools** | Tool installer is opt-in and interactive; nothing auto-installs |
-| **Auto-load plugins** | Plugins load automatically when you source `setup.sh` |
-| **Cross-platform** | Works on macOS (arm64/amd64) and Linux (x86_64/aarch64) |
-
-## Shell Integration
-
-After bootstrapping, add this line to your `~/.zshrc` or `~/.zprofile`:
-
-```bash
-source "/path/to/terminal-setup/setup.sh"
+```sh
+source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
 ```
 
-## Aliases
+The bootstrap:
 
-| Alias | Command |
-|---|---|
-| `dev` | `cd ~/Documents/DEV` |
-| `doc` | `cd ~/Documents` |
-| `pro` | `cd ~/Documents/DEV/projects` |
-| `dwn` | `cd ~/Downloads` |
-| `x` | `clear` |
-| `b` | `cd ..` |
-| `ls` | `ls -lah --color=always` (auto-detects macOS) |
-| `rl` | `source ~/.zprofile` |
+1. Downloads managed shell files directly into `~/.terminal-setup`.
+2. Preserves `~/.terminal-setup/local` and `~/.terminal-setup/tools`.
+3. Installs a pinned Aqua binary through Aqua's checksum-verified installer.
+4. Uses Aqua to install the declared command-line tools.
+5. Sources the environment into the current shell.
 
-## Plugins
+No repository clone or Git installation is required. Running the same command
+again updates the managed configuration without deleting tools or local files.
 
-- **git** — 200+ git aliases and helpers (from Oh My Zsh)
-- **aws** — AWS profile/region switching and prompt (from Oh My Zsh)
-- **terraform** — Terraform aliases and prompt helpers (from Oh My Zsh)
-- **tmux** — tmux session management and aliases (from Oh My Zsh)
-- **zsh-autosuggestions** — Fish-like autosuggestions for zsh
+To use a different private root, set it before bootstrapping and before shell
+startup:
+
+```sh
+export TERMINAL_SETUP_HOME="$HOME/.my-terminal"
+source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
+```
+
+## Automatic shell startup
+
+Add one line to `~/.zshrc` or `~/.bashrc`:
+
+```sh
+[ -r "$HOME/.terminal-setup/shell/init.sh" ] && . "$HOME/.terminal-setup/shell/init.sh"
+```
+
+Shell startup is entirely local and performs no network access. `init.sh` sets:
+
+```sh
+TERMINAL_SETUP_HOME="$HOME/.terminal-setup"
+AQUA_ROOT_DIR="$TERMINAL_SETUP_HOME/tools"
+AQUA_GLOBAL_CONFIG="$TERMINAL_SETUP_HOME/config/aqua.yaml"
+PATH="$AQUA_ROOT_DIR/bin:$PATH"
+```
 
 ## Tools
 
-The interactive installer supports:
+[Aqua](https://aquaproj.github.io/) manages the tools declaratively from
+`config/aqua.yaml`:
 
-| Tool | Description |
+- fzf
+- bat
+- dust
+- ripgrep (`rg`)
+- fd
+- jq
+- yq
+
+Install or repair the declared tools at any time:
+
+```sh
+~/.terminal-setup/install-tools.sh
+```
+
+Aqua handles operating-system and CPU differences, downloads release assets,
+and applies the verification supported by its pinned standard registry. Its
+binary, registry data, packages, and command proxies all remain under
+`~/.terminal-setup/tools`.
+
+Some upstream projects do not publish native binaries for every platform. Aqua
+uses supported compatibility mechanisms such as Rosetta 2 where its registry
+allows them and reports unsupported combinations rather than requesting root.
+
+## Aliases
+
+Managed aliases are in `shell/aliases.sh`:
+
+| Alias | Action |
 |---|---|
-| [fzf](https://github.com/junegunn/fzf) | Fuzzy finder |
-| [bat](https://github.com/sharkdp/bat) | A `cat` clone with wings |
-| [dust](https://github.com/bootandy/dust) | A more intuitive `du` |
-| [ripgrep](https://github.com/BurntSushi/ripgrep) | Ultra-fast `grep` |
-| [fd](https://github.com/sharkdp/fd) | A simple, fast `find` |
+| `dev` | Go to `~/Documents/DEV` |
+| `doc` | Go to `~/Documents` |
+| `pro` | Go to `~/Documents/DEV/projects` |
+| `dwn` | Go to `~/Downloads` |
+| `b` | Go up one directory |
+| `x` | Clear the terminal |
+| `l` | Forced-colour listing: hidden entries, directories, then files; each group alphabetical |
+| `rl` | Reload the current shell's startup file |
 
-## License
+## Zsh plugins
 
-See [LICENSE](LICENSE) for details.
+Git aliases and Zsh autosuggestions are enabled by default. Configure the list
+in `~/.terminal-setup/local/init.sh`:
+
+```sh
+TERMINAL_SETUP_PLUGINS="git aws terraform tmux autosuggestions"
+```
+
+AWS, Terraform, and tmux plugins load only when their corresponding command is
+available. Bash receives aliases, Aqua tools, bat configuration, and fzf shell
+integration, but not Zsh plugins.
+
+## Local customisation
+
+The bootstrap never overwrites `local/`. Use:
+
+```text
+~/.terminal-setup/local/init.sh       environment and plugin selection
+~/.terminal-setup/local/aliases.sh    additional or replacement aliases
+~/.terminal-setup/local/plugins/*.zsh additional Zsh plugins
+```
+
+Local aliases load after managed aliases, so they can override defaults.
+
+## Uninstall
+
+Remove the startup line from `~/.zshrc` or `~/.bashrc`, then remove the single
+private directory:
+
+```sh
+rm -rf "$HOME/.terminal-setup"
+```
+
+No files elsewhere are created by terminal-setup itself.
+
+## Source repository
+
+The repository is only the source for the remotely managed files. For local
+development, `setup.sh` remains as a compatibility entry point that loads the
+repository through the same `shell/init.sh` path.
+
+## Licence
+
+The project is Apache-2.0. Vendored plugins retain their upstream licences; see
+`plugins/UPSTREAM.md`.

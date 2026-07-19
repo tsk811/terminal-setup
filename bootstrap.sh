@@ -1,185 +1,136 @@
 #!/bin/sh
-# ============================================================================
-# Terminal Setup — Bootstrap
-# ============================================================================
-# One-liner to download the repo and get started. No git required.
-# Compatible with sh, bash, and zsh.
-#
-# Usage:
-#   sh <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
-#
-# What it does:
-#   1. Downloads the repo as a tarball (via curl) into the current directory
-#   2. Presents a menu: source aliases/plugins OR install tools
-#
-# Supported platforms: macOS, Linux
-# ============================================================================
+# Rootless terminal setup for Bash and Zsh.
+# Recommended:
+#   source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
 
-set -eu
+_ts_root=${TERMINAL_SETUP_HOME:-$HOME/.terminal-setup}
+_ts_base=${TERMINAL_SETUP_BASE_URL:-https://raw.githubusercontent.com/tsk811/terminal-setup/main}
+_ts_aqua_version=v2.62.0
+_ts_aqua_installer_version=v4.0.2
+_ts_aqua_installer_sha256=98b883756cdd0a6807a8c7623404bfc3bc169275ad9064dc23a6e24ad398f43d
 
-# -- Colors ------------------------------------------------------------------
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-DIM='\033[2m'
-NC='\033[0m'
+_ts_info() { printf '\033[0;34m[info]\033[0m %s\n' "$*"; }
+_ts_ok() { printf '\033[0;32m[ok]\033[0m   %s\n' "$*"; }
+_ts_fail() { printf '\033[0;31m[error]\033[0m %s\n' "$*" >&2; return 1; }
 
-# -- Config ------------------------------------------------------------------
-REPO_OWNER="tsk811"
-REPO_NAME="terminal-setup"
-BRANCH="main"
-TARBALL_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/heads/${BRANCH}.tar.gz"
-INSTALL_DIR="$(pwd)/${REPO_NAME}"
+_ts_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    return 1
+  fi
+}
 
-# -- Helpers -----------------------------------------------------------------
-info()    { printf "${BLUE}[info]${NC}    %s\n" "$*"; }
-success() { printf "${GREEN}[✔]${NC}       %s\n" "$*"; }
-warn()    { printf "${YELLOW}[warn]${NC}    %s\n" "$*"; }
-error()   { printf "${RED}[✘]${NC}       %s\n" "$*" >&2; }
+_ts_cleanup() {
+  [ -z "${_ts_tmp:-}" ] || [ ! -d "$_ts_tmp" ] || rm -rf "$_ts_tmp"
+  unset _ts_tmp _ts_files _ts_file _ts_source _ts_destination _ts_actual _ts_current
+}
 
-# ============================================================================
-# Step 1: Download the repo
-# ============================================================================
-download_repo() {
-  if [ -d "$INSTALL_DIR" ]; then
-    warn "Directory already exists: $INSTALL_DIR"
-    printf "${BOLD}  Update to latest? (y/N): ${NC}"
-    read response
-    case "$response" in
-      y|Y|yes|YES)
-        info "Removing old copy..."
-        # Preserve the bin/ directory (installed tools) during update
-        if [ -d "$INSTALL_DIR/bin" ]; then
-          mv "$INSTALL_DIR/bin" "/tmp/_terminal_setup_bin_backup_$$"
-        fi
-        rm -rf "$INSTALL_DIR"
-        ;;
-      *)
-        info "Using existing installation."
+_ts_download_managed_files() {
+  _ts_files='bootstrap.sh
+install-tools.sh
+shell/init.sh
+shell/aliases.sh
+shell/fzf.sh
+config/aqua.yaml
+config/bat.conf
+config/tmux.conf
+plugins/UPSTREAM.md
+plugins/aws.plugin.zsh
+plugins/git.plugin.zsh
+plugins/terraform.plugin.zsh
+plugins/tmux/tmux.extra.conf
+plugins/tmux/tmux.only.conf
+plugins/tmux/tmux.plugin.zsh
+plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'
+
+  _ts_tmp=$(mktemp -d 2>/dev/null) || { _ts_fail 'Could not create a temporary directory.'; return 1; }
+  _ts_info "Downloading managed files into $_ts_root"
+
+  while IFS= read -r _ts_file; do
+    [ -n "$_ts_file" ] || continue
+    _ts_destination=$_ts_tmp/$_ts_file
+    mkdir -p "$(dirname "$_ts_destination")" || return 1
+    curl -fsSL "$_ts_base/$_ts_file" -o "$_ts_destination" || {
+      _ts_cleanup
+      _ts_fail "Download failed: $_ts_file"
+      return 1
+    }
+  done <<EOF
+$_ts_files
+EOF
+
+  # Replace files only after every download succeeds. local/ and tools/ are not
+  # managed and are never touched by an update.
+  while IFS= read -r _ts_file; do
+    [ -n "$_ts_file" ] || continue
+    mkdir -p "$_ts_root/$(dirname "$_ts_file")" || return 1
+    mv "$_ts_tmp/$_ts_file" "$_ts_root/$_ts_file" || return 1
+  done <<EOF
+$_ts_files
+EOF
+
+  mkdir -p "$_ts_root/local" "$_ts_root/tools"
+  chmod +x "$_ts_root/bootstrap.sh" "$_ts_root/install-tools.sh"
+  _ts_cleanup
+  _ts_ok 'Configuration installed.'
+}
+
+_ts_install_aqua() {
+  export AQUA_ROOT_DIR=$_ts_root/tools
+  export AQUA_GLOBAL_CONFIG=$_ts_root/config/aqua.yaml
+
+  if [ -x "$AQUA_ROOT_DIR/bin/aqua" ]; then
+    _ts_current=$("$AQUA_ROOT_DIR/bin/aqua" -v 2>/dev/null || true)
+    case "$_ts_current" in
+      *"${_ts_aqua_version#v}"*)
+        _ts_info "Aqua $_ts_aqua_version is already installed."
         return 0
         ;;
+      *) _ts_info "Updating Aqua to $_ts_aqua_version" ;;
     esac
   fi
 
-  info "Downloading ${REPO_NAME} from GitHub..."
-  tmp_tar=$(mktemp)
-
-  if ! curl -fsSL "$TARBALL_URL" -o "$tmp_tar"; then
-    error "Failed to download repo. Check your internet connection."
-    rm -f "$tmp_tar"
-    exit 1
-  fi
-
-  info "Extracting to $INSTALL_DIR..."
-  mkdir -p "$INSTALL_DIR"
-  tar -xzf "$tmp_tar" --strip-components=1 -C "$INSTALL_DIR"
-  rm -f "$tmp_tar"
-
-  # Restore preserved bin/ directory if it existed
-  if [ -d "/tmp/_terminal_setup_bin_backup_$$" ]; then
-    mv "/tmp/_terminal_setup_bin_backup_$$" "$INSTALL_DIR/bin"
-    info "Restored previously installed tools."
-  fi
-
-  chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/install-tools.sh" "$INSTALL_DIR/bootstrap.sh"
-  success "Repository downloaded to $INSTALL_DIR"
+  _ts_tmp=$(mktemp -d 2>/dev/null) || return 1
+  _ts_info "Installing Aqua $_ts_aqua_version without root access"
+  curl -fsSL "https://raw.githubusercontent.com/aquaproj/aqua-installer/$_ts_aqua_installer_version/aqua-installer" \
+    -o "$_ts_tmp/aqua-installer" || return 1
+  _ts_actual=$(_ts_sha256 "$_ts_tmp/aqua-installer") || {
+    _ts_fail 'sha256sum or shasum is required to verify Aqua.'
+    return 1
+  }
+  [ "$_ts_actual" = "$_ts_aqua_installer_sha256" ] || {
+    _ts_fail 'Aqua installer checksum verification failed.'
+    return 1
+  }
+  chmod +x "$_ts_tmp/aqua-installer"
+  AQUA_ROOT_DIR=$AQUA_ROOT_DIR "$_ts_tmp/aqua-installer" -v "$_ts_aqua_version" || return 1
+  _ts_cleanup
+  _ts_ok "Aqua installed under $AQUA_ROOT_DIR"
 }
 
-# ============================================================================
-# Step 2: Interactive menu
-# ============================================================================
-show_bootstrap_menu() {
-  printf "\n"
-  printf "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════╗${NC}\n"
-  printf "${BOLD}${CYAN}║         🚀 Terminal Setup — Bootstrap                   ║${NC}\n"
-  printf "${BOLD}${CYAN}╠══════════════════════════════════════════════════════════╣${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}  Location: ${GREEN}%s${NC}\n" "$INSTALL_DIR"
-  printf "${BOLD}${CYAN}╠══════════════════════════════════════════════════════════╣${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}                                                          ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}  ${BOLD}[1]${NC} Source aliases & plugins                            ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}      ${DIM}Loads aliases, git/aws/terraform/tmux plugins,${NC}     ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}      ${DIM}and zsh-autosuggestions into current shell.${NC}         ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}                                                          ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}  ${BOLD}[2]${NC} Install CLI tools (interactive)                     ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}      ${DIM}fzf, bat, dust, ripgrep, fd — choose which${NC}         ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}      ${DIM}to install. Installs into the repo folder.${NC}         ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}                                                          ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}  ${BOLD}[3]${NC} Show shell integration instructions                ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}      ${DIM}How to add this to your ~/.zshrc for auto-load.${NC}    ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}                                                          ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}  ${BOLD}[q]${NC} Quit                                               ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}║${NC}                                                          ${BOLD}${CYAN}║${NC}\n"
-  printf "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════╝${NC}\n"
-  printf "\n"
+_ts_main() {
+  command -v curl >/dev/null 2>&1 || { _ts_fail 'curl is required.'; return 1; }
+  command -v mktemp >/dev/null 2>&1 || { _ts_fail 'mktemp is required.'; return 1; }
+  _ts_download_managed_files || return 1
+  _ts_install_aqua || return 1
+  "$_ts_root/install-tools.sh" || return 1
+
+  export TERMINAL_SETUP_HOME=$_ts_root
+  # shellcheck disable=SC1090
+  . "$_ts_root/shell/init.sh" || return 1
+  _ts_ok 'Terminal setup is active in this shell.'
+  printf 'Add this to ~/.zshrc or ~/.bashrc if it is not already present:\n\n'
+  printf '  [ -r "$HOME/.terminal-setup/shell/init.sh" ] && . "$HOME/.terminal-setup/shell/init.sh"\n\n'
 }
 
-show_integration_instructions() {
-  printf "\n"
-  printf "${BOLD}${CYAN}── Shell Integration ────────────────────────────────────${NC}\n"
-  printf "\n"
-  printf "  Add this line to your ${BOLD}~/.zshrc${NC} or ${BOLD}~/.bashrc${NC}:\n"
-  printf "\n"
-  printf "    ${GREEN}. \"%s/setup.sh\"${NC}\n" "$INSTALL_DIR"
-  printf "\n"
-  printf "  Then reload your shell:\n"
-  printf "\n"
-  printf "    ${GREEN}source ~/.zshrc${NC}  or  ${GREEN}source ~/.bashrc${NC}\n"
-  printf "\n"
-  printf "${BOLD}${CYAN}─────────────────────────────────────────────────────────${NC}\n"
-  printf "\n"
-}
-
-# ============================================================================
-# Main
-# ============================================================================
-main() {
-  printf "${BOLD}${CYAN}"
-  printf '  ╺┳╸┏━╸┏━┓┏┳┓╻┏┓╻┏━┓╻        ┏━┓┏━╸╺┳╸╻ ╻┏━┓\n'
-  printf '   ┃ ┣╸ ┣┳┛┃┃┃┃┃┗┫┣━┫┃   ╺━╸  ┗━┓┣╸  ┃ ┃ ┃┣━┛\n'
-  printf '   ╹ ┗━╸╹┗╸╹ ╹╹╹ ╹╹ ╹┗━╸      ┗━┛┗━╸ ╹ ┗━┛╹  \n'
-  printf "${NC}\n"
-
-  # Download / update the repo
-  download_repo
-
-  while true; do
-    show_bootstrap_menu
-    printf "${BOLD}Choose an option (1-3, q=quit): ${NC}"
-    read choice
-
-    case "$choice" in
-      1)
-        printf "\n"
-        info "Sourcing aliases & plugins..."
-        printf "\n"
-        printf "  ${YELLOW}NOTE:${NC} Sourcing must happen in your current shell.\n"
-        printf "  Run this command manually:\n"
-        printf "\n"
-        printf "    ${GREEN}. \"%s/setup.sh\"${NC}\n" "$INSTALL_DIR"
-        printf "\n"
-        ;;
-      2)
-        printf "\n"
-        sh "$INSTALL_DIR/install-tools.sh"
-        ;;
-      3)
-        show_integration_instructions
-        ;;
-      q|Q)
-        printf "\n"
-        success "All done! Your terminal setup is at: ${GREEN}${INSTALL_DIR}${NC}"
-        printf "\n"
-        show_integration_instructions
-        exit 0
-        ;;
-      *)
-        warn "Invalid choice. Enter 1, 2, 3, or q."
-        ;;
-    esac
-  done
-}
-
-main "$@"
+_ts_main
+_ts_status=$?
+_ts_cleanup
+unset -f _ts_main _ts_install_aqua _ts_download_managed_files _ts_sha256 \
+  _ts_cleanup _ts_info _ts_ok _ts_fail 2>/dev/null
+unset _ts_root _ts_base _ts_aqua_version _ts_aqua_installer_version \
+  _ts_aqua_installer_sha256
+return "$_ts_status" 2>/dev/null || exit "$_ts_status"

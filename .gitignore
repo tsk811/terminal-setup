@@ -1,7 +1,4 @@
-# Downloaded tool binaries (created by install-tools.sh)
-/bin/
-
-# OS generated files
+# OS-generated files
 .DS_Store
 Thumbs.db
 
@@ -15,3 +12,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# If this repository itself is used as TERMINAL_SETUP_HOME
+/tools/
+/local/
+/config/aqua-checksums.json
