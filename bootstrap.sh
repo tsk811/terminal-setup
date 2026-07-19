@@ -1,10 +1,11 @@
 #!/bin/sh
 # Rootless terminal setup for Bash and Zsh.
 # Recommended:
-#   source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
+#   source <(curl -fsSL "https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh?$(date +%s)")
 
 _ts_root=${TERMINAL_SETUP_HOME:-$HOME/.terminal-setup}
 _ts_base=${TERMINAL_SETUP_BASE_URL:-https://raw.githubusercontent.com/tsk811/terminal-setup/main}
+_ts_cache_bust=$(date +%s)
 _ts_aqua_version=v2.62.0
 _ts_aqua_installer_version=v4.0.2
 _ts_aqua_installer_sha256=98b883756cdd0a6807a8c7623404bfc3bc169275ad9064dc23a6e24ad398f43d
@@ -53,7 +54,7 @@ plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'
     [ -n "$_ts_file" ] || continue
     _ts_destination=$_ts_tmp/$_ts_file
     mkdir -p "$(dirname "$_ts_destination")" || return 1
-    curl -fsSL "$_ts_base/$_ts_file" -o "$_ts_destination" || {
+    curl -fsSL "$_ts_base/$_ts_file?ts=$_ts_cache_bust" -o "$_ts_destination" || {
       _ts_cleanup
       _ts_fail "Download failed: $_ts_file"
       return 1
@@ -132,5 +133,5 @@ _ts_cleanup
 unset -f _ts_main _ts_install_aqua _ts_download_managed_files _ts_sha256 \
   _ts_cleanup _ts_info _ts_ok _ts_fail 2>/dev/null
 unset _ts_root _ts_base _ts_aqua_version _ts_aqua_installer_version \
-  _ts_aqua_installer_sha256
+  _ts_aqua_installer_sha256 _ts_cache_bust
 return "$_ts_status" 2>/dev/null || exit "$_ts_status"

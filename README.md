@@ -29,7 +29,7 @@ initial requirements.
 Source the bootstrap from Bash or Zsh:
 
 ```sh
-source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
+source <(curl -fsSL "https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh?$(date +%s)")
 ```
 
 The bootstrap:
@@ -48,7 +48,7 @@ startup:
 
 ```sh
 export TERMINAL_SETUP_HOME="$HOME/.my-terminal"
-source <(curl -fsSL https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh)
+source <(curl -fsSL "https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh?$(date +%s)")
 ```
 
 ## Automatic shell startup
