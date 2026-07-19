@@ -17,3 +17,4 @@ packages:
   - name: sharkdp/fd@v10.3.0
   - name: jqlang/jq@jq-1.8.1
   - name: mikefarah/yq@v4.53.2
+  - name: tmux/tmux-builds@v3.7b

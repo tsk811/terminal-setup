@@ -44,8 +44,21 @@ l() (
   _ts_l_print "${_ts_files[@]}"
 )
 
-if [ -n "${ZSH_VERSION:-}" ]; then
-  alias rl='source ~/.zshrc'
-else
-  alias rl='source ~/.bashrc'
-fi
+# Reload both login and interactive configuration without restarting the shell.
+# A function is used because this needs conditional, multi-file behaviour.
+rl() {
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    [ ! -r "$HOME/.zprofile" ] || . "$HOME/.zprofile"
+    export TERMINAL_SETUP_RELOAD=1
+    [ ! -r "$HOME/.zshrc" ] || . "$HOME/.zshrc"
+  elif [ -n "${BASH_VERSION:-}" ]; then
+    if [ -r "$HOME/.bash_profile" ]; then
+      . "$HOME/.bash_profile"
+    elif [ -r "$HOME/.profile" ]; then
+      . "$HOME/.profile"
+    fi
+    export TERMINAL_SETUP_RELOAD=1
+    [ ! -r "$HOME/.bashrc" ] || . "$HOME/.bashrc"
+  fi
+  unset TERMINAL_SETUP_RELOAD
+}

@@ -1,9 +1,14 @@
 #!/bin/sh
 # Shared Bash/Zsh startup. This file performs no network access.
 
-if [ -n "${TERMINAL_SETUP_LOADED:-}" ] && [ -z "${TERMINAL_SETUP_RELOAD:-}" ]; then
+if [ -n "${_TERMINAL_SETUP_LOADED:-}" ] && [ -z "${TERMINAL_SETUP_RELOAD:-}" ]; then
   return 0 2>/dev/null || exit 0
 fi
+
+# Older versions exported this marker, causing child shells (including tmux
+# panes) to skip initialization even though aliases and functions cannot be
+# inherited. Clear that legacy environment value and use a shell-local marker.
+unset TERMINAL_SETUP_LOADED
 
 export TERMINAL_SETUP_HOME=${TERMINAL_SETUP_HOME:-$HOME/.terminal-setup}
 export AQUA_ROOT_DIR=$TERMINAL_SETUP_HOME/tools
@@ -30,7 +35,7 @@ if [ -n "${ZSH_VERSION:-}" ]; then
     autoload -Uz compinit && compinit
   fi
 
-  : "${TERMINAL_SETUP_PLUGINS:=git autosuggestions}"
+  : "${TERMINAL_SETUP_PLUGINS:=git tmux autosuggestions}"
   for _ts_plugin in ${(z)TERMINAL_SETUP_PLUGINS}; do
     case $_ts_plugin in
       git)
@@ -80,7 +85,8 @@ fi
 _ts_source "$TERMINAL_SETUP_HOME/shell/prompt.sh"
 _ts_source "$TERMINAL_SETUP_HOME/shell/fzf.sh"
 
-export TERMINAL_SETUP_LOADED=1
+_TERMINAL_SETUP_LOADED=1
+TERMINAL_SETUP_LOADED=1
 unset TERMINAL_SETUP_RELOAD _ts_plugin _ts_local_plugin
 if [ -n "${ZSH_VERSION:-}" ]; then
   unfunction _ts_source 2>/dev/null

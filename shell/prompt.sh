@@ -25,9 +25,7 @@ _terminal_setup_git_segment() {
 
 if [ -n "${ZSH_VERSION:-}" ]; then
   setopt prompt_subst
-  PROMPT='%F{cyan}%n@%m%f %F{blue}%~%f%F{yellow}$(_terminal_setup_git_segment)%f
-%# '
+  PROMPT='%F{cyan}%n@%m%f %F{blue}%1~%f%F{yellow}$(_terminal_setup_git_segment)%f %# '
 elif [ -n "${BASH_VERSION:-}" ]; then
-  PS1='\[\033[36m\]\u@\h\[\033[0m\] \[\033[34m\]\w\[\033[33m\]$(_terminal_setup_git_segment)\[\033[0m\]
-\$ '
+  PS1='\[\033[36m\]\u@\h\[\033[0m\] \[\033[34m\]\W\[\033[33m\]$(_terminal_setup_git_segment)\[\033[0m\] \$ '
 fi

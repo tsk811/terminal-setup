@@ -17,3 +17,7 @@ this file, replace the snapshot without local modifications, run syntax and
 clean-shell loading checks, and mention the new commit in the change log.
 
 Compatibility changes belong in `setup.sh`, not in these vendored snapshots.
+
+The tmux snapshot has one local integration fix: generated helper functions
+such as `ts` route through the plugin wrapper so a newly created tmux server
+always receives terminal-setup's managed configuration.

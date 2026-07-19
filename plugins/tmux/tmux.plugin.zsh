@@ -67,9 +67,9 @@ function _build_tmux_alias {
   setopt localoptions no_rc_expand_param
   eval "function $1 {
     if [[ -z \$1 ]] || [[ \${1:0:1} == '-' ]]; then
-      tmux $2 \"\$@\"
+      _zsh_tmux_plugin_run $2 \"\$@\"
     else
-      tmux $2 $3 \"\$@\"
+      _zsh_tmux_plugin_run $2 $3 \"\$@\"
     fi
   }"
 
@@ -121,7 +121,10 @@ fi
 # Wrapper function for tmux.
 function _zsh_tmux_plugin_run() {
   if [[ -n "$@" ]]; then
-    command tmux "$@"
+    local -a tmux_direct_cmd
+    tmux_direct_cmd=(command tmux)
+    [[ -n "${_ZSH_TMUX_FIXED_CONFIG:-}" ]] && tmux_direct_cmd+=(-f "$_ZSH_TMUX_FIXED_CONFIG")
+    $tmux_direct_cmd "$@"
     return $?
   fi
 

@@ -81,6 +81,7 @@ PATH="$AQUA_ROOT_DIR/bin:$PATH"
 - fd
 - jq
 - yq
+- tmux
 
 Install or repair the declared tools at any time:
 
@@ -110,12 +111,14 @@ Managed aliases are in `shell/aliases.sh`:
 | `b` | Go up one directory |
 | `x` | Clear the terminal |
 | `l` | Forced-colour listing: hidden entries, directories, then files; each group alphabetical |
-| `rl` | Reload the current shell's startup file |
+| `rl` | Reload Zsh's `.zprofile` and `.zshrc`, or Bash's login profile and `.bashrc` |
 
 ## Zsh plugins
 
-Git aliases and Zsh autosuggestions are enabled by default. Configure the list
-in `~/.terminal-setup/local/init.sh`:
+Git aliases, tmux integration, and Zsh autosuggestions are enabled by default.
+The tmux plugin uses the managed `config/tmux.conf` and does not automatically
+start a tmux session. Configure the plugin list in
+`~/.terminal-setup/local/init.sh`:
 
 ```sh
 TERMINAL_SETUP_PLUGINS="git aws terraform tmux autosuggestions"
@@ -124,6 +127,27 @@ TERMINAL_SETUP_PLUGINS="git aws terraform tmux autosuggestions"
 AWS, Terraform, and tmux plugins load only when their corresponding command is
 available. Bash receives aliases, Aqua tools, bat configuration, and fzf shell
 integration, but not Zsh plugins.
+
+## Tmux shortcuts
+
+Tmux uses `Ctrl-a` as its prefix. Press the prefix, release it, and then press:
+
+| Shortcut | Action |
+|---|---|
+| `\|` / `-` | Split left/right or top/bottom in the current directory |
+| Arrow keys or `h` / `j` / `k` / `l` | Move between panes |
+| `H` / `J` / `K` / `L` | Resize the current pane; hold the final key to repeat |
+| `c` | Create a window in the current directory |
+| `n` / `p` | Select the next/previous window |
+| `x` | Kill the current pane immediately |
+| `X` | Kill the current session immediately |
+| `d` | Detach from the session |
+| `r` | Reload the managed tmux configuration |
+
+Mouse support is enabled for selecting panes, dragging pane borders to resize,
+and scrolling through tmux history. To select text using the terminal itself,
+hold its mouse-bypass modifier while dragging (commonly `Shift`; some macOS
+terminal configurations use `Option`), then use the normal copy shortcut.
 
 ## Local customisation
 
@@ -139,9 +163,9 @@ Local aliases load after managed aliases, so they can override defaults.
 
 ## Prompt
 
-Interactive Bash and Zsh sessions show the user, host, current directory, and
-the current Git branch (or short commit when detached). The Git segment appears
-only inside a repository. To keep a machine's existing prompt, add this to
+Interactive Bash and Zsh sessions show the user, host, current directory name,
+and current Git branch (or short commit when detached) on a single line. The Git
+segment appears only inside a repository. To keep a machine's existing prompt, add this to
 `~/.terminal-setup/local/init.sh`:
 
 ```sh
