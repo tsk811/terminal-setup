@@ -34,6 +34,7 @@ _ts_download_managed_files() {
 install-tools.sh
 shell/init.sh
 shell/aliases.sh
+shell/prompt.sh
 shell/fzf.sh
 config/aqua.yaml
 config/bat.conf

@@ -77,6 +77,7 @@ if [ -n "${ZSH_VERSION:-}" ]; then
   fi
 fi
 
+_ts_source "$TERMINAL_SETUP_HOME/shell/prompt.sh"
 _ts_source "$TERMINAL_SETUP_HOME/shell/fzf.sh"
 
 export TERMINAL_SETUP_LOADED=1

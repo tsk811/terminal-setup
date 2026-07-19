@@ -10,6 +10,7 @@ kept under one directory in the user's home folder:
 ├── shell/
 │   ├── init.sh
 │   ├── aliases.sh
+│   ├── prompt.sh
 │   └── fzf.sh
 ├── config/
 │   ├── aqua.yaml
@@ -135,6 +136,17 @@ The bootstrap never overwrites `local/`. Use:
 ```
 
 Local aliases load after managed aliases, so they can override defaults.
+
+## Prompt
+
+Interactive Bash and Zsh sessions show the user, host, current directory, and
+the current Git branch (or short commit when detached). The Git segment appears
+only inside a repository. To keep a machine's existing prompt, add this to
+`~/.terminal-setup/local/init.sh`:
+
+```sh
+TERMINAL_SETUP_PROMPT=0
+```
 
 ## Uninstall
 
