@@ -7,7 +7,7 @@ checksum:
 
 registries:
   - type: standard
-    ref: v4.155.1
+    ref: v4.539.0
 
 packages:
   - name: junegunn/fzf@v0.74.1
