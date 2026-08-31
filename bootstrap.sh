@@ -6,9 +6,9 @@
 _ts_root=${TERMINAL_SETUP_HOME:-$HOME/.terminal-setup}
 _ts_base=${TERMINAL_SETUP_BASE_URL:-https://raw.githubusercontent.com/tsk811/terminal-setup/main}
 _ts_cache_bust=$(date +%s)
-_ts_aqua_version=v2.62.0
-_ts_aqua_installer_version=v4.0.2
-_ts_aqua_installer_sha256=98b883756cdd0a6807a8c7623404bfc3bc169275ad9064dc23a6e24ad398f43d
+_ts_aqua_version=v2.62.3
+_ts_aqua_installer_version=v4.0.5
+_ts_aqua_installer_sha256=451028d56959cc738564885b1dbebc2691ea038ffde04e2472e4d486a3591146
 
 _ts_info() { printf '\033[0;34m[info]\033[0m %s\n' "$*"; }
 _ts_ok() { printf '\033[0;32m[ok]\033[0m   %s\n' "$*"; }
