@@ -33,6 +33,18 @@ Source the bootstrap from Bash or Zsh:
 source <(curl -fsSL "https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh?$(date +%s)")
 ```
 
+If Aqua's verification services are blocked by a firewall:
+
+```sh
+export AQUA_DISABLE_COSIGN=true
+export AQUA_DISABLE_SLSA=true
+export AQUA_DISABLE_GITHUB_ARTIFACT_ATTESTATION=true
+
+source <(curl -fsSL "https://raw.githubusercontent.com/tsk811/terminal-setup/main/bootstrap.sh?$(date +%s)")
+```
+
+This keeps checksum verification but disables signature and provenance checks.
+
 The bootstrap:
 
 1. Downloads managed shell files directly into `~/.terminal-setup`.
