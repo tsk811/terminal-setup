@@ -21,15 +21,6 @@ l() (
     shopt -s nullglob
   fi
 
-  _ts_hidden=(.[!.]* ..?*)
-  for _ts_entry in *; do
-    if [ -d "$_ts_entry" ]; then
-      _ts_directories+=("$_ts_entry")
-    else
-      _ts_files+=("$_ts_entry")
-    fi
-  done
-
   _ts_l_print() {
     [ "$#" -gt 0 ] || return 0
     if command ls --color=always -d . >/dev/null 2>&1; then
@@ -38,6 +29,24 @@ l() (
       command env CLICOLOR=1 CLICOLOR_FORCE=1 ls -ldhG -- "$@"
     fi
   }
+
+  # `l DIR` lists that directory in groups. Any other arguments (files, or
+  # several paths) are listed as given. The subshell keeps the cd local.
+  if [ "$#" -eq 1 ] && [ -d "$1" ]; then
+    CDPATH= builtin cd -- "$1" || return
+  elif [ "$#" -gt 0 ]; then
+    _ts_l_print "$@"
+    return
+  fi
+
+  _ts_hidden=(.[!.]* ..?*)
+  for _ts_entry in *; do
+    if [ -d "$_ts_entry" ]; then
+      _ts_directories+=("$_ts_entry")
+    else
+      _ts_files+=("$_ts_entry")
+    fi
+  done
 
   _ts_l_print "${_ts_hidden[@]}"
   _ts_l_print "${_ts_directories[@]}"

@@ -122,7 +122,7 @@ Managed aliases are in `shell/aliases.sh`:
 | `dwn` | Go to `~/Downloads` |
 | `b` | Go up one directory |
 | `x` | Clear the terminal |
-| `l` | Forced-colour listing: hidden entries, directories, then files; each group alphabetical |
+| `l [dir]` | Forced-colour listing of the current or given directory: hidden entries, directories, then files; each group alphabetical. Other arguments are listed as given |
 | `rl` | Reload Zsh's `.zprofile` and `.zshrc`, or Bash's login profile and `.bashrc` |
 
 ## Zsh plugins
